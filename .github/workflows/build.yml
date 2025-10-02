@@ -25,14 +25,23 @@ jobs:
 
     - name: Install Android SDK
       run: |
+        # Descargar command line tools
         wget https://dl.google.com/android/repository/commandlinetools-linux-9123335_latest.zip -O cmdline-tools.zip
         mkdir -p $HOME/android-sdk/cmdline-tools
         unzip -q cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
         mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+
+        # Exportar paths
         export ANDROID_SDK_ROOT=$HOME/android-sdk
         export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-        yes | sdkmanager --licenses
-        sdkmanager "platforms;android-30" "build-tools;30.0.3" "platform-tools"
+
+        # Instalar componentes necesarios
+        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+        yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-30" "build-tools;30.0.3" "platform-tools"
+
+        # Crear carpeta donde buildozer espera los build-tools
+        mkdir -p /home/runner/.buildozer/android/platform/android-sdk/build-tools/30.0.3
+        cp -r $ANDROID_SDK_ROOT/build-tools/30.0.3/* /home/runner/.buildozer/android/platform/android-sdk/build-tools/30.0.3/
 
     - name: Install Python deps
       run: |
@@ -42,6 +51,7 @@ jobs:
     - name: Build APK (debug)
       run: |
         export ANDROID_SDK_ROOT=$HOME/android-sdk
+        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
         buildozer -v android debug
 
     - name: Upload APK
