@@ -2,55 +2,56 @@ name: Build Kivy APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Install system deps
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          unzip zip git openjdk-11-jdk \
-          python3-pip python3-setuptools \
-          build-essential libffi-dev
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip openjdk-17-jdk
 
-    - name: Install Android SDK
-      run: |
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-        mkdir -p $HOME/android-sdk/cmdline-tools
-        unzip -q cmdline-tools.zip -d $HOME/android-sdk/cmdline-tools
-        mv $HOME/android-sdk/cmdline-tools/cmdline-tools $HOME/android-sdk/cmdline-tools/latest
+      - name: Install Android SDK + Build-tools
+        run: |
+          mkdir -p $HOME/android-sdk
+          cd $HOME/android-sdk
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip commandlinetools-linux-9477386_latest.zip -d cmdline-tools
+          mv cmdline-tools/cmdline-tools cmdline-tools/latest
 
-        export ANDROID_SDK_ROOT=$HOME/android-sdk
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
 
-        echo "sdkmanager path: $(which sdkmanager)"
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-30" "build-tools;30.0.3" "platform-tools"
 
-        yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-        $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-30" "build-tools;30.0.3"
+          # HACK: si pide 36.1.0 copiamos 30.0.3 como si fuera 36.1.0
+          mkdir -p $ANDROID_HOME/build-tools/36.1.0
+          cp -r $ANDROID_HOME/build-tools/30.0.3/* $ANDROID_HOME/build-tools/36.1.0/
 
-    - name: Install Python deps
-      run: |
-        pip install --upgrade pip
-        pip install buildozer Cython
+      - name: Install buildozer
+        run: |
+          pip install buildozer cython virtualenv
 
-    - name: Build APK (debug)
-      run: |
-        buildozer -v android debug
+      - name: Build APK (debug)
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/30.0.3:$PATH
+          buildozer android debug
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: Ralenior1-APK
-        path: bin/*.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-apk
+          path: bin/*.apk
