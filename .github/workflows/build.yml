@@ -10,20 +10,27 @@ jobs:
 
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4   # 👈 importante, usar v4
 
-    - name: Set up Docker
-      run: sudo apt-get update && sudo apt-get install -y docker.io
+    - name: Set up Python
+      uses: actions/setup-python@v5   # 👈 ahora la versión estable es v5
+      with:
+        python-version: '3.10'
 
-    - name: Build APK with Docker
+    - name: Install dependencies
       run: |
-        docker run --rm \
-          -v ${{ github.workspace }}:/app \
-          kivy/buildozer \
-          buildozer -v android debug
+        sudo apt-get update
+        sudo apt-get install -y unzip zip openjdk-17-jdk
+        python -m pip install --upgrade pip
+        pip install buildozer cython virtualenv
+
+    - name: Build APK (debug)
+      run: |
+        buildozer init
+        buildozer -v android debug
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Ralenior1-apk
         path: bin/*.apk
