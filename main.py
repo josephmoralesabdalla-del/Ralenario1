@@ -1,9 +1,9 @@
 from kivy.app import App
 from kivy.uix.label import Label
 
-class RaleniorApp(App):
+class MyApp(App):
     def build(self):
-        return Label(text="Hola Mundo desde Ralenior 1")
+        return Label(text="Hello World from Ralenior!")
 
 if __name__ == "__main__":
-    RaleniorApp().run()
+    MyApp().run()
