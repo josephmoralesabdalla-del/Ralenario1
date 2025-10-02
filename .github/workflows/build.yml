@@ -12,17 +12,25 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Set up Docker
-        run: docker --version
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
 
-      - name: Build APK with Kivy Docker
+      - name: Install dependencies
         run: |
-          docker pull kivy/buildozer
-          docker run --rm -v ${{ github.workspace }}:/home/user/app \
-            kivy/buildozer buildozer -v android debug
+          sudo apt-get update
+          sudo apt-get install -y build-essential git python3-pip openjdk-17-jdk unzip
+          pip install --upgrade pip
+          pip install buildozer cython
+
+      - name: Build APK
+        run: |
+          buildozer init || true
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Ralenario1-apk
+          name: Ralenior1-apk
           path: bin/*.apk
