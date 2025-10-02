@@ -1,4 +1,6 @@
 [app]
+android.build_tools_version = 30.0.3
+android.api = 30
 title = Ralenior1
 package.name = ralenior1
 package.domain = org.test
